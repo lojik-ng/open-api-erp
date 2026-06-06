@@ -1,0 +1,812 @@
+openapi: 3.1.0
+info:
+  title: Syllabux API-Only ERP
+  description: Comprehensive API specification for the AI-Managed CLI ERP System
+    covering Core, CRM, Catalog, Invoicing, Accounting, Inventory, and HR.
+  version: 1.0.0
+  contact:
+    name: System Administrator
+servers:
+  - url: http://localhost:11122/v1
+    description: Local Development Server
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: Core
+    description: System health, assistants, and core infrastructure
+  - name: CRM
+    description: Leads, clients, interactions, and scheduling
+  - name: Catalog
+    description: Products, services, and tax rates
+  - name: Invoicing
+    description: Invoices, payments, and recurring subscriptions
+  - name: Accounting
+    description: Chart of accounts, journal entries, and period management
+  - name: Inventory
+    description: Stock levels, adjustments, and procurement
+  - name: HR
+    description: Employees, attendance, leave, and payroll
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: SHA-256 hashed API key provided during assistant provisioning.
+  parameters:
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Composite pagination cursor (base64 encoded).
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 25
+        maximum: 100
+    IncludeDeletedParam:
+      name: include_deleted
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include soft-deleted records in the response.
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+      required:
+        - error
+        - message
+    CursorMeta:
+      type: object
+      properties:
+        next_cursor:
+          type: string
+          nullable: true
+        has_more:
+          type: boolean
+      required:
+        - has_more
+    Assistant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        api_key_prefix:
+          type: string
+        rate_limit_per_minute:
+          type: integer
+        is_admin:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - active
+            - suspended
+            - revoked
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Lead:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        company_name:
+          type: string
+        stage:
+          type: string
+          enum:
+            - new
+            - qualified
+            - proposal
+            - negotiation
+            - won
+            - lost
+        assigned_assistant_id:
+          type: string
+          format: uuid
+        notes:
+          type: string
+        converted_client_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Client:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - b2c
+            - b2b
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - inactive
+            - suspended
+            - churned
+        lead_id:
+          type: string
+          format: uuid
+          nullable: true
+        currency:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - subscription
+            - one_time_service
+            - one_time_product
+        default_price:
+          type: number
+        currency:
+          type: string
+        billing_interval:
+          type: string
+          enum:
+            - monthly
+            - quarterly
+            - annually
+          nullable: true
+        tax_rate_id:
+          type: string
+          format: uuid
+        is_active:
+          type: boolean
+        requires_stock:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - draft
+            - sent
+            - partially_paid
+            - paid
+            - overdue
+            - cancelled
+            - refunded
+            - void
+        currency:
+          type: string
+        subtotal:
+          type: number
+        tax_total:
+          type: number
+        total:
+          type: number
+        amount_paid:
+          type: number
+        issue_date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - active
+            - past_due
+            - paused
+            - cancelled
+        start_date:
+          type: string
+          format: date
+        next_billing_date:
+          type: string
+          format: date
+    JournalEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+        description:
+          type: string
+        reversal_of:
+          type: string
+          format: uuid
+          nullable: true
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              account_id:
+                type: string
+                format: uuid
+              description:
+                type: string
+              debit:
+                type: number
+              credit:
+                type: number
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: email
+        department:
+          type: string
+        role:
+          type: string
+        status:
+          type: string
+          enum:
+            - onboarding
+            - active
+            - on_leave
+            - terminated
+        created_at:
+          type: string
+          format: date-time
+paths:
+  /health:
+    get:
+      tags:
+        - Core
+      summary: System health check
+      security: []
+      responses:
+        "200":
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  timestamp:
+                    type: string
+        "503":
+          description: System unhealthy
+  /crm/leads:
+    get:
+      tags:
+        - CRM
+      summary: List leads
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of leads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Lead"
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": &a1
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401": &a2
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403": &a3
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404": &a4
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429": &a5
+          description: Too Many Requests
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags:
+        - CRM
+      summary: Create a new lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Lead"
+      responses:
+        "201":
+          description: Lead created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /crm/leads/{id}:
+    get:
+      tags:
+        - CRM
+      summary: Get lead by ID
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Lead details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /crm/leads/{id}/convert:
+    post:
+      tags:
+        - CRM
+      summary: Convert a lead into a client
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Lead converted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /crm/clients:
+    get:
+      tags:
+        - CRM
+      summary: List clients
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/IncludeDeletedParam"
+      responses:
+        "200":
+          description: Paginated list of clients
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Client"
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /catalog/products:
+    get:
+      tags:
+        - Catalog
+      summary: List products
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/IncludeDeletedParam"
+      responses:
+        "200":
+          description: Paginated list of products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Product"
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /invoicing/invoices:
+    get:
+      tags:
+        - Invoicing
+      summary: List invoices
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Invoice"
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+    post:
+      tags:
+        - Invoicing
+      summary: Issue a new invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "201":
+          description: Invoice issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /invoicing/subscriptions:
+    get:
+      tags:
+        - Invoicing
+      summary: List active subscriptions
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of subscriptions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Subscription"
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /accounting/journal-entries:
+    get:
+      tags:
+        - Accounting
+      summary: List journal entries
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of journal entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JournalEntry"
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+    post:
+      tags:
+        - Accounting
+      summary: Create a manual journal entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JournalEntry"
+      responses:
+        "201":
+          description: Journal entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /accounting/journal-entries/{id}/reverse:
+    post:
+      tags:
+        - Accounting
+      summary: Reverse a journal entry
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Reversing entry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /accounting/periods/close:
+    post:
+      tags:
+        - Accounting
+      summary: Close a financial period
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                notes:
+                  type: string
+              required:
+                - start_date
+                - end_date
+      responses:
+        "200":
+          description: Period successfully closed
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /inventory/stock:
+    get:
+      tags:
+        - Inventory
+      summary: List current stock levels
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Paginated list of inventory items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref:
+                        type: object
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /hr/employees:
+    get:
+      tags:
+        - HR
+      summary: List employees
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/IncludeDeletedParam"
+      responses:
+        "200":
+          description: Paginated list of employees
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Employee"
+                  meta:
+                    $ref: "#/components/schemas/CursorMeta"
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
+  /hr/payroll/run:
+    post:
+      tags:
+        - HR
+      summary: Run payroll for a given period
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                period_start:
+                  type: string
+                  format: date
+                period_end:
+                  type: string
+                  format: date
+              required:
+                - period_start
+                - period_end
+      responses:
+        "200":
+          description: Payroll processed successfully
+        "400": *a1
+        "401": *a2
+        "403": *a3
+        "404": *a4
+        "429": *a5
