@@ -1,6 +1,6 @@
-# Technical Architecture & Implementation Plan: Syllabux API-Only ERP
+# Technical Architecture & Implementation Plan: Open API ERP
 
-This document outlines the technical architecture and step-by-step implementation plan for the Syllabux API-Only ERP system managed by CLI AI assistants.
+This document outlines the technical architecture and step-by-step implementation plan for the Open API ERP system managed by CLI AI assistants.
 
 ## 1. Technology Stack
 

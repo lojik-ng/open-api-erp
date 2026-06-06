@@ -1,6 +1,6 @@
 # Business Requirements Document (BRD)
 
-**Project Name**: Syllabux API-Only ERP
+**Project Name**: Open API ERP
 **Date**: 2026-06-06
 **Revision**: 2
 

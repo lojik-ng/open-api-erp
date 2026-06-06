@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Syllabux API-Only ERP
+  title: Open API ERP
   description: Comprehensive API specification for the AI-Managed CLI ERP System
     covering Core, CRM, Catalog, Invoicing, Accounting, Inventory, and HR.
   version: 1.0.0

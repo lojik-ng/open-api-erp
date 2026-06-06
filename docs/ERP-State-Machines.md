@@ -1,6 +1,6 @@
 # ERP State Machines & Workflows
 
-Because the Syllabux API-Only ERP is managed autonomously by CLI AI assistants, strict adherence to predefined state machines is required. Assistants must understand the legal transitions of an entity (e.g., an invoice cannot be `paid` if it is still a `draft`) to prevent data corruption.
+Because the Open API ERP is managed autonomously by CLI AI assistants, strict adherence to predefined state machines is required. Assistants must understand the legal transitions of an entity (e.g., an invoice cannot be `paid` if it is still a `draft`) to prevent data corruption.
 
 This document maps out the core state machines and event workflows for the system.
 

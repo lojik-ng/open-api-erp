@@ -1,6 +1,6 @@
 # ERP Entity Relationship Diagram (ERD) & Data Dictionary
 
-This document provides a comprehensive view of the database schema for the Syllabux API-Only ERP system. It includes the complete ERD and a detailed Data Dictionary defining all tables, columns, and constraints across all 5 delivery phases.
+This document provides a comprehensive view of the database schema for the Open API ERP system. It includes the complete ERD and a detailed Data Dictionary defining all tables, columns, and constraints across all 5 delivery phases.
 
 ## 1. Entity Relationship Diagram (ERD)
 

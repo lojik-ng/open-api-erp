@@ -1,6 +1,6 @@
 # Role-Based Access Control (RBAC) Matrix
 
-This document defines the permission matrix for the CLI AI Assistants operating the Syllabux API-Only ERP system. Because AI assistants are autonomous, granular and strict RBAC is essential to prevent unintended cross-module data manipulation.
+This document defines the permission matrix for the CLI AI Assistants operating the Open API ERP system. Because AI assistants are autonomous, granular and strict RBAC is essential to prevent unintended cross-module data manipulation.
 
 ## 1. Core Assistant Personas (Roles)
 
