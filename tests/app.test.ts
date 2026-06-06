@@ -193,4 +193,109 @@ describe('Open API ERP API tests', () => {
       expect(client.status).toBe('active');
     });
   });
+
+  describe('Row-Level Scoping', () => {
+    it('scopes access strictly to designated resource IDs', async () => {
+      // 1. Seed two leads
+      const leadAId = uuid();
+      const leadBId = uuid();
+      db.prepare(`
+        INSERT INTO leads (id, first_name, last_name, stage)
+        VALUES (?, 'Lead', 'A', 'new'), (?, 'Lead', 'B', 'new')
+      `).run(leadAId, leadBId);
+
+      // 2. Provision assistant with read:leads permission
+      const { apiKey, id: assistantId } = seedTestAssistant('Scoped Sales Agent', ['read:leads']);
+
+      // 3. Assign row-level scope for Lead A only
+      const scopeId = uuid();
+      db.prepare(`
+        INSERT INTO assistant_scopes (id, assistant_id, resource_type, resource_id)
+        VALUES (?, ?, 'leads', ?)
+      `).run(scopeId, assistantId, leadAId);
+
+      // 4. Try getting Lead A (should succeed)
+      const resA = await request(app)
+        .get(`/v1/crm/leads/${leadAId}`)
+        .set('x-api-key', apiKey);
+      expect(resA.status).toBe(200);
+      expect(resA.body.id).toBe(leadAId);
+
+      // 5. Try getting Lead B (should return 404 since it is not scoped for this assistant)
+      const resB = await request(app)
+        .get(`/v1/crm/leads/${leadBId}`)
+        .set('x-api-key', apiKey);
+      expect(resB.status).toBe(404);
+    });
+
+    it('allows admins to create, list, and delete scopes', async () => {
+      const admin = seedTestAssistant('System Administrator', [], true);
+      const targetAssistant = seedTestAssistant('Target Sales Assistant', ['read:leads']);
+
+      const scopePayload = {
+        resource_type: 'leads',
+        resource_id: uuid()
+      };
+
+      // Create scope
+      const resCreate = await request(app)
+        .post(`/v1/assistants/${targetAssistant.id}/scopes`)
+        .set('x-api-key', admin.apiKey)
+        .send(scopePayload);
+      expect(resCreate.status).toBe(201);
+      expect(resCreate.body.id).toBeDefined();
+      const scopeId = resCreate.body.id;
+
+      // List scopes
+      const resList = await request(app)
+        .get(`/v1/assistants/${targetAssistant.id}/scopes`)
+        .set('x-api-key', admin.apiKey);
+      expect(resList.status).toBe(200);
+      expect(resList.body.length).toBe(1);
+      expect(resList.body[0].resource_id).toBe(scopePayload.resource_id);
+
+      // Delete scope
+      const resDelete = await request(app)
+        .delete(`/v1/assistants/${targetAssistant.id}/scopes/${scopeId}`)
+        .set('x-api-key', admin.apiKey);
+      expect(resDelete.status).toBe(200);
+      expect(resDelete.body.success).toBe(true);
+    });
+  });
+
+  describe('Webhook Subscriptions', () => {
+    it('allows assistants to register, list, and delete webhook subscriptions', async () => {
+      const assistant = seedTestAssistant('Webhook Agent', ['write:webhooks', 'read:webhooks']);
+      
+      const webhookPayload = {
+        url: 'https://example.com/webhook-handler',
+        eventType: 'invoice.sent'
+      };
+
+      // Register webhook
+      const resRegister = await request(app)
+        .post('/v1/webhooks')
+        .set('x-api-key', assistant.apiKey)
+        .send(webhookPayload);
+      expect(resRegister.status).toBe(201);
+      expect(resRegister.body.id).toBeDefined();
+      expect(resRegister.body.secret).toContain('whsec_');
+      const webhookId = resRegister.body.id;
+
+      // List webhooks
+      const resList = await request(app)
+        .get('/v1/webhooks')
+        .set('x-api-key', assistant.apiKey);
+      expect(resList.status).toBe(200);
+      expect(resList.body.length).toBe(1);
+      expect(resList.body[0].url).toBe(webhookPayload.url);
+
+      // Delete webhook
+      const resDelete = await request(app)
+        .delete(`/v1/webhooks/${webhookId}`)
+        .set('x-api-key', assistant.apiKey);
+      expect(resDelete.status).toBe(200);
+      expect(resDelete.body.success).toBe(true);
+    });
+  });
 });

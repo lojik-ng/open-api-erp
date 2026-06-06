@@ -20,6 +20,7 @@ import { invoicingRouter } from './modules/invoicing/invoicing.routes';
 import { accountingRouter } from './modules/accounting/accounting.routes';
 import { inventoryRouter } from './modules/inventory/inventory.routes';
 import { hrRouter } from './modules/hr/hr.routes';
+import { webhooksRouter } from './modules/webhooks/webhooks.routes';
 
 export const app = express();
 
@@ -80,6 +81,7 @@ app.use('/v1/invoicing', invoicingRouter);
 app.use('/v1/accounting', accountingRouter);
 app.use('/v1/inventory', inventoryRouter);
 app.use('/v1/hr', hrRouter);
+app.use('/v1/webhooks', webhooksRouter);
 
 // Global error handler (must be registered last)
 app.use(errorHandler);

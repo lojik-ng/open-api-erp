@@ -168,4 +168,40 @@ export class AssistantsService {
     }
     return { success: true };
   }
+
+  static addScope(assistantId: string, resourceType: string, resourceId: string) {
+    const assistant = db.prepare('SELECT id FROM assistants WHERE id = ?').get(assistantId);
+    if (!assistant) {
+      throw new NotFoundError('Assistant', assistantId);
+    }
+    const id = uuid();
+    try {
+      db.prepare(`
+        INSERT INTO assistant_scopes (id, assistant_id, resource_type, resource_id)
+        VALUES (?, ?, ?, ?)
+      `).run(id, assistantId, resourceType, resourceId);
+    } catch (err: any) {
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        throw new ConflictError(`Scope for resource type '${resourceType}' and ID '${resourceId}' already exists for this assistant.`);
+      }
+      throw err;
+    }
+    return { id, assistant_id: assistantId, resource_type: resourceType, resource_id: resourceId };
+  }
+
+  static deleteScope(assistantId: string, scopeId: string) {
+    const result = db.prepare('DELETE FROM assistant_scopes WHERE id = ? AND assistant_id = ?').run(scopeId, assistantId);
+    if (result.changes === 0) {
+      throw new NotFoundError('Scope', scopeId);
+    }
+    return { success: true };
+  }
+
+  static listScopes(assistantId: string) {
+    const assistant = db.prepare('SELECT id FROM assistants WHERE id = ?').get(assistantId);
+    if (!assistant) {
+      throw new NotFoundError('Assistant', assistantId);
+    }
+    return db.prepare('SELECT * FROM assistant_scopes WHERE assistant_id = ?').all(assistantId);
+  }
 }

@@ -75,6 +75,9 @@ export function getScopedSpec(permissions: string[], isAdmin: boolean): any {
     if (path.startsWith('/hr/')) {
       return permissions.includes('read:employees') || permissions.includes('write:employees') || permissions.includes('read:attendance') || permissions.includes('write:attendance') || permissions.includes('read:leaves') || permissions.includes('write:leaves') || permissions.includes('read:payroll') || permissions.includes('process:payroll');
     }
+    if (path.startsWith('/webhooks')) {
+      return permissions.includes('read:webhooks') || permissions.includes('write:webhooks');
+    }
     return false;
   };
 

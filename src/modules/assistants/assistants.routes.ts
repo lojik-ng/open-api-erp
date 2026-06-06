@@ -22,6 +22,19 @@ const UpdateAssistantSchema = z.object({
   permissions: z.array(z.string()).optional(),
 });
 
+const AddScopeSchema = z.object({
+  resource_type: z.string().min(1),
+  resource_id: z.string().uuid(),
+});
+
+const AssistantScopeResponseSchema = registry.register('AssistantScopeResponse', z.object({
+  id: z.string().uuid(),
+  assistant_id: z.string().uuid(),
+  resource_type: z.string(),
+  resource_id: z.string().uuid(),
+  created_at: z.string().optional(),
+}));
+
 const AssistantResponseSchema = registry.register('AssistantResponse', z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -206,6 +219,105 @@ assistantsRouter.put('/:id', rbac('write:assistants'), audit('assistants'), (req
 assistantsRouter.delete('/:id', rbac('write:assistants'), audit('assistants'), (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = AssistantsService.delete(req.params.id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Assistant Scopes management endpoints (Admin only)
+registry.registerPath({
+  method: 'get',
+  path: '/assistants/{id}/scopes',
+  summary: 'List row-level scopes for assistant (Admin only)',
+  tags: ['Core'],
+  parameters: [
+    { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+  ],
+  responses: {
+    200: {
+      description: 'List of scopes',
+      content: {
+        'application/json': {
+          schema: z.array(AssistantScopeResponseSchema),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/assistants/{id}/scopes',
+  summary: 'Add row-level scope to assistant (Admin only)',
+  tags: ['Core'],
+  parameters: [
+    { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+  ],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: AddScopeSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Scope added successfully',
+      content: {
+        'application/json': {
+          schema: AssistantScopeResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'delete',
+  path: '/assistants/{id}/scopes/{scopeId}',
+  summary: 'Delete row-level scope from assistant (Admin only)',
+  tags: ['Core'],
+  parameters: [
+    { name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+    { name: 'scopeId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+  ],
+  responses: {
+    200: {
+      description: 'Scope deleted successfully',
+      content: {
+        'application/json': {
+          schema: z.object({ success: z.boolean() }),
+        },
+      },
+    },
+  },
+});
+
+assistantsRouter.get('/:id/scopes', rbac('read:assistants'), (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = AssistantsService.listScopes(req.params.id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+assistantsRouter.post('/:id/scopes', rbac('write:assistants'), audit('assistant_scopes'), (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validated = AddScopeSchema.parse(req.body);
+    const result = AssistantsService.addScope(req.params.id, validated.resource_type, validated.resource_id);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+assistantsRouter.delete('/:id/scopes/:scopeId', rbac('write:assistants'), audit('assistant_scopes'), (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = AssistantsService.deleteScope(req.params.id, req.params.scopeId);
     res.json(result);
   } catch (err) {
     next(err);

@@ -26,6 +26,14 @@ class EventBus extends EventEmitter {
 
       // Emit to in-process listeners
       this.emit(eventType, { eventId, resourceType, resourceId, payload });
+
+      // Dispatch Webhooks asynchronously
+      try {
+        const { WebhooksService } = require('../modules/webhooks/webhooks.service');
+        WebhooksService.dispatch(eventType, payload);
+      } catch (webhookErr) {
+        logger.warn(webhookErr, 'Failed to dispatch webhooks inside publish');
+      }
     } catch (err) {
       logger.error({ err, eventType, resourceId }, 'Failed to publish event');
       throw err;
@@ -73,13 +81,23 @@ class EventBus extends EventEmitter {
       }
 
       for (const event of unprocessed) {
+        const parsedPayload = JSON.parse(event.payload);
         logger.debug({ eventId: event.id, eventType: event.event_type }, 'Replaying event');
+        
         this.emit(event.event_type, {
           eventId: event.id,
           resourceType: event.resource_type,
           resourceId: event.resource_id,
-          payload: JSON.parse(event.payload),
+          payload: parsedPayload,
         });
+
+        // Re-dispatch webhooks
+        try {
+          const { WebhooksService } = require('../modules/webhooks/webhooks.service');
+          WebhooksService.dispatch(event.event_type, parsedPayload);
+        } catch (webhookErr) {
+          logger.warn(webhookErr, 'Failed to dispatch webhooks inside replay');
+        }
       }
     } catch (err) {
       logger.error(err, 'Failed to replay unprocessed events');
