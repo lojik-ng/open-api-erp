@@ -1,0 +1,40 @@
+{
+  "name": "open-api-erp",
+  "version": "1.0.0",
+  "description": "Comprehensive API-only ERP system managed by CLI AI assistants",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "jest --runInBand --detectOpenHandles",
+    "seed": "tsx scripts/seed.ts",
+    "backup": "tsx scripts/backup.ts",
+    "migrate": "tsx src/migrations/runner.ts"
+  },
+  "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^7.1.0",
+    "better-sqlite3": "^9.4.3",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pino": "^9.0.0",
+    "swagger-ui-express": "^5.0.0",
+    "uuid": "^9.0.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.30",
+    "@types/supertest": "^6.0.2",
+    "@types/swagger-ui-express": "^4.1.6",
+    "@types/uuid": "^9.0.8",
+    "jest": "^29.7.0",
+    "pino-pretty": "^11.0.0",
+    "supertest": "^6.3.4",
+    "ts-jest": "^29.1.2",
+    "tsx": "^4.7.1",
+    "typescript": "^5.4.3"
+  }
+}
