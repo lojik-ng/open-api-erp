@@ -11,4 +11,4 @@ fi
 
 # Start the docker container (passes any command-line arguments to docker compose up)
 echo "🚀 Starting open-api-erp container..."
-docker compose up "$@"
+docker compose up -d
