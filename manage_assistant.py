@@ -63,6 +63,10 @@ PERMISSION_CATEGORIES = {
         ("read:payroll", "View payroll runs"),
         ("process:payroll", "Calculate and close payroll cycles"),
     ],
+    "Monitored Communications": [
+        ("read:monitored_communications", "View monitored communication logs"),
+        ("write:monitored_communications", "Create/update/delete monitored communication logs"),
+    ],
     "System / Special": [
         ("read:webhooks", "View registered outgoing webhooks"),
         ("write:webhooks", "Register/delete outgoing webhooks"),

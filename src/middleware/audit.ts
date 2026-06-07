@@ -8,7 +8,8 @@ const ALLOWED_TABLES = new Set([
   'products', 'tax_rates', 'exchange_rates', 'subscriptions', 'invoices', 'invoice_line_items',
   'payments', 'accounts', 'journal_entries', 'closed_periods', 'inventory', 'stock_adjustments',
   'suppliers', 'purchase_orders', 'purchase_order_lines', 'employees', 'attendance_records',
-  'leave_types', 'leave_requests', 'payslips', 'performance_reviews', 'assistant_scopes', 'webhook_subscriptions'
+  'leave_types', 'leave_requests', 'payslips', 'performance_reviews', 'assistant_scopes', 'webhook_subscriptions',
+  'monitored_communications'
 ]);
 
 function getResourceById(resourceType: string, id: string): any | null {

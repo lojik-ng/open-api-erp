@@ -78,6 +78,9 @@ export function getScopedSpec(permissions: string[], isAdmin: boolean): any {
     if (path.startsWith('/webhooks')) {
       return permissions.includes('read:webhooks') || permissions.includes('write:webhooks');
     }
+    if (path.startsWith('/monitored-communications')) {
+      return permissions.includes('read:monitored_communications') || permissions.includes('write:monitored_communications');
+    }
     return false;
   };
 
