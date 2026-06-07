@@ -593,6 +593,42 @@ Permissions required: `read:webhooks`, `write:webhooks`
 
 ---
 
+### 3.9. Monitored Communications Module
+
+Permissions required: `read:monitored_communications`, `write:monitored_communications`
+
+#### Create a Monitored Communication Log
+
+```bash
+./scripts/client.sh POST monitored-communications '{"client_name": "Acme Corp", "contact_name": "John Doe", "channel": "email", "channel_address": "john@acme.com", "conversation_date": "2026-06-07T12:00:00Z"}'
+```
+
+#### List Monitored Communication Logs
+
+```bash
+./scripts/client.sh GET monitored-communications
+```
+
+#### Get Communication Log Details
+
+```bash
+./scripts/client.sh GET monitored-communications/{id}
+```
+
+#### Update a Communication Log
+
+```bash
+./scripts/client.sh PUT monitored-communications/{id} '{"client_name": "Acme LLC"}'
+```
+
+#### Delete a Communication Log
+
+```bash
+./scripts/client.sh DELETE monitored-communications/{id}
+```
+
+---
+
 ## 4. Verification & Testing
 
 Verify your environment connection and configuration by querying the `/health` endpoint anonymously:
