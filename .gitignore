@@ -1,6 +1,10 @@
 node_modules/
 dist/
-data/
+data/*
+!data/.gitkeep
+!data/backups/
+data/backups/*
+!data/backups/.gitkeep
 .env
 *.db
 *.db-wal
