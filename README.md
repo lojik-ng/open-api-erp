@@ -24,6 +24,12 @@ Comprehensive documentation mapping the requirements, design, and architecture c
 - [State Machines & Workflows](./docs/ERP-State-Machines.md)
 - [OpenAPI 3.1 Specification](./docs/ERP-OpenAPI-Spec.yaml)
 
+## AI Agent Integration (Skills)
+
+For AI Agents/Assistants to consume the ERP API, a modular agent skill is available in the [skills/](file:///home/lojik/Desktop/hermes%20docker/erp/skills) folder:
+
+- **Open API ERP Client Skill**: Detailed reference implementation, usage patterns, and CLI command mappings for all modules (CRM, Catalog, Invoicing, Accounting, Inventory, HR, Webhooks) can be found in [skills/open-api-erp-client/SKILL.md](file:///home/lojik/Desktop/hermes%20docker/erp/skills/open-api-erp-client/SKILL.md).
+
 ## Technology Stack
 
 - **Backend**: Node.js with TypeScript & Express.js
