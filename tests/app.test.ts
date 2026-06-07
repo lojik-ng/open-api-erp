@@ -298,4 +298,53 @@ describe('Open API ERP API tests', () => {
       expect(resDelete.body.success).toBe(true);
     });
   });
+
+  describe('Security Enhancements', () => {
+    it('returns CORS and security headers for requests', async () => {
+      const res = await request(app).get('/health');
+      expect(res.headers['access-control-allow-origin']).toBe('*');
+      expect(res.headers['x-content-type-options']).toBe('nosniff');
+      expect(res.headers['x-frame-options']).toBe('DENY');
+    });
+
+    it('sanitizes raw API keys and secrets in audit logs', async () => {
+      const admin = seedTestAssistant('System Admin', ['write:assistants'], true);
+      
+      // Create a new assistant
+      const res = await request(app)
+        .post('/v1/assistants')
+        .set('x-api-key', admin.apiKey)
+        .send({ name: 'Bot To Be Audited', permissions: ['read:leads'] });
+      
+      expect(res.status).toBe(201);
+      const botId = res.body.id;
+      const rawApiKey = res.body.apiKey;
+      expect(rawApiKey).toBeDefined();
+
+      // Retrieve audit log for this assistant creation
+      const auditEntry = db.prepare(`
+        SELECT after_state FROM audit_logs 
+        WHERE resource_type = 'assistants' AND resource_id = ?
+      `).get(botId) as any;
+
+      expect(auditEntry).toBeDefined();
+      const afterState = JSON.parse(auditEntry.after_state);
+      expect(afterState.apiKey).toBe('[REDACTED]');
+    });
+
+    it('prevents SSRF by blocking webhook registration to private/local networks', async () => {
+      const assistant = seedTestAssistant('Webhook Bot', ['write:webhooks']);
+      
+      const res = await request(app)
+        .post('/v1/webhooks')
+        .set('x-api-key', assistant.apiKey)
+        .send({
+          url: 'http://127.0.0.1/evil-callback',
+          eventType: 'invoice.sent'
+        });
+      
+      expect(res.status).toBe(422);
+      expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
 });

@@ -341,4 +341,17 @@ export class HrService {
     }
     return db.prepare('SELECT * FROM performance_reviews ORDER BY created_at DESC').all();
   }
+
+  static createLeaveType(input: any) {
+    const id = uuid();
+    db.prepare(`
+      INSERT INTO leave_types (id, name, description, annual_entitlement, requires_approval)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(id, input.name, input.description || null, input.annual_entitlement || 0.0, input.requires_approval ? 1 : 0);
+    return db.prepare('SELECT * FROM leave_types WHERE id = ?').get(id);
+  }
+
+  static listLeaveTypes() {
+    return db.prepare('SELECT * FROM leave_types ORDER BY name ASC').all();
+  }
 }

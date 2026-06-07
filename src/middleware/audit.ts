@@ -23,6 +23,27 @@ function getResourceById(resourceType: string, id: string): any | null {
   }
 }
 
+/**
+ * Recursively redacts sensitive keys to prevent raw keys/secrets leaking in audit logs.
+ */
+function sanitizeForAudit(state: any): any {
+  if (!state || typeof state !== 'object') {
+    return state;
+  }
+  const clean = Array.isArray(state) ? [...state] : { ...state };
+  
+  const sensitiveKeys = ['apikey', 'api_key', 'secret', 'password', 'token', 'key'];
+  
+  for (const k of Object.keys(clean)) {
+    if (sensitiveKeys.some(sk => k.toLowerCase().includes(sk))) {
+      clean[k] = '[REDACTED]';
+    } else if (clean[k] && typeof clean[k] === 'object') {
+      clean[k] = sanitizeForAudit(clean[k]);
+    }
+  }
+  return clean;
+}
+
 export function audit(resourceType: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     // Only audit mutating requests
@@ -66,8 +87,8 @@ export function audit(resourceType: string) {
             action,
             resourceType,
             finalResourceId,
-            beforeState ? JSON.stringify(beforeState) : null,
-            afterState ? JSON.stringify(afterState) : null,
+            beforeState ? JSON.stringify(sanitizeForAudit(beforeState)) : null,
+            afterState ? JSON.stringify(sanitizeForAudit(afterState)) : null,
             req.headers['idempotency-key'] || null,
             req.ip || null
           );

@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS clients (
     phone TEXT,
     address TEXT,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended', 'churned')),
-    lead_id TEXT REFERENCES leads(id), -- Original lead (for attribution)
+    lead_id TEXT REFERENCES leads(id) ON DELETE SET NULL, -- Original lead (for attribution)
     currency TEXT NOT NULL DEFAULT 'USD',
     deleted_at TEXT,                    -- Soft delete (null = active)
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS contact_persons (
 
 CREATE TABLE IF NOT EXISTS interactions (
     id TEXT PRIMARY KEY,
-    lead_id TEXT REFERENCES leads(id),
+    lead_id TEXT REFERENCES leads(id) ON DELETE SET NULL,
     client_id TEXT REFERENCES clients(id),
     type TEXT NOT NULL CHECK (type IN ('call', 'email', 'meeting', 'note', 'other')),
     subject TEXT,
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS scheduled_events (
     event_type TEXT NOT NULL CHECK (event_type IN ('meeting', 'call', 'task', 'reminder', 'other')),
     start_time TEXT NOT NULL,
     end_time TEXT,
-    lead_id TEXT REFERENCES leads(id),
+    lead_id TEXT REFERENCES leads(id) ON DELETE SET NULL,
     client_id TEXT REFERENCES clients(id),
     employee_id TEXT,                  -- FK added in HR module migration
     assistant_id TEXT NOT NULL REFERENCES assistants(id),

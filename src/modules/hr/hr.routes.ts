@@ -20,6 +20,7 @@ const CreateEmployeeSchema = z.object({
   employment_type: z.enum(['full_time', 'part_time', 'contractor']),
   base_salary: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(3).optional(),
+  status: z.enum(['onboarding', 'active', 'on_leave', 'terminated']).optional(),
 });
 
 const ClockSchema = z.object({
@@ -32,6 +33,13 @@ const LeaveRequestSchema = z.object({
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Must be YYYY-MM-DD'),
   reason: z.string().optional(),
+});
+
+const LeaveTypeSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  annual_entitlement: z.number().nonnegative().optional(),
+  requires_approval: z.boolean().optional(),
 });
 
 const LeaveActionSchema = z.object({
@@ -85,6 +93,15 @@ const OpenAPIPayslip = registry.register('Payslip', z.object({
   created_at: z.string(),
 }));
 
+const OpenAPILeaveType = registry.register('LeaveType', z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  description: z.string().nullable(),
+  annual_entitlement: z.number(),
+  requires_approval: z.boolean(),
+  created_at: z.string(),
+}));
+
 // OpenAPI registrations
 registry.registerPath({
   method: 'get',
@@ -135,6 +152,26 @@ registry.registerPath({
               currency: z.string(),
             })),
           }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/hr/payroll/payslips',
+  summary: 'List payslips',
+  tags: ['HR'],
+  parameters: [
+    { name: 'employee_id', in: 'query', schema: { type: 'string', format: 'uuid' }, description: 'Filter by employee ID' },
+  ],
+  responses: {
+    200: {
+      description: 'List of payslips',
+      content: {
+        'application/json': {
+          schema: z.array(OpenAPIPayslip),
         },
       },
     },
@@ -286,7 +323,7 @@ hrRouter.post('/payroll/run', rbac('process:payroll'), audit('payslips'), (req: 
   }
 });
 
-hrRouter.get('/payslips', rbac('read:payroll'), (req: Request, res: Response, next: NextFunction) => {
+hrRouter.get('/payroll/payslips', rbac('read:payroll'), (req: Request, res: Response, next: NextFunction) => {
   try {
     const employee_id = req.query.employee_id as string | undefined;
     const result = HrService.listPayslips(employee_id);
@@ -311,6 +348,49 @@ hrRouter.get('/performance-reviews', rbac('read:performance'), (req: Request, re
   try {
     const employee_id = req.query.employee_id as string | undefined;
     const result = HrService.listReviews(employee_id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// LEAVE TYPES
+registry.registerPath({
+  method: 'post',
+  path: '/hr/leave-types',
+  summary: 'Create leave type (Admin only)',
+  tags: ['HR'],
+  request: {
+    body: { content: { 'application/json': { schema: LeaveTypeSchema } } },
+  },
+  responses: {
+    201: { description: 'Leave type created', content: { 'application/json': { schema: OpenAPILeaveType } } },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/hr/leave-types',
+  summary: 'List leave types',
+  tags: ['HR'],
+  responses: {
+    200: { description: 'List of leave types', content: { 'application/json': { schema: z.array(OpenAPILeaveType) } } },
+  },
+});
+
+hrRouter.post('/leave-types', rbac('write:leaves'), audit('leave_types'), (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validated = LeaveTypeSchema.parse(req.body);
+    const result = HrService.createLeaveType(validated);
+    res.status(201).json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+hrRouter.get('/leave-types', rbac('read:leaves'), (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = HrService.listLeaveTypes();
     res.json(result);
   } catch (err) {
     next(err);

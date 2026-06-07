@@ -42,6 +42,14 @@ The system is **fully implemented** and all modules are fully operational:
 - **HR**: Employee lifecycles, leaf attendance tracking, salary and expense runs, and automated payroll posting.
 - **Worker & Bus**: Polling-based background outbox event processing, automatic subscription invoicing renewals, and webhook notification dispatches.
 
+## Security & Compliance
+
+The system includes built-in security controls out of the box:
+- **CORS Policies**: Manual CORS middleware permits requests from any origin (`*`) to ensure autonomous AI assistants running from different environments can communicate seamlessly with the API.
+- **Security Headers**: Standard secure HTTP headers are enforced (e.g., `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`) to protect against clickjacking and MIME-sniffing.
+- **Audit Log Redaction**: A recursive sanitizer automatically replaces sensitive parameters (such as `apiKey`, `secret`, `password`, `token`) with `[REDACTED]` in the stored audit logs before saving.
+- **SSRF Prevention**: Webhook registrations validate destination URLs, rejecting requests targeting loopbacks (`127.0.0.1`), link-locals (`169.254.169.254`), or private RFC 1918 subnets.
+
 ## Getting Started
 
 ### 1. Installation
@@ -58,6 +66,11 @@ Copy `.env.example` to `.env` (it will default to port `11122` and database path
 cp .env.example .env
 ```
 
+If you wish to use the client helper scripts or agent skills, you can configure your assistant's active API key by adding it to your `.env` file:
+```text
+API_KEY=erp_...
+```
+
 ### 3. Run Migrations & Seed Data
 
 Run migrations to configure the SQLite database:
@@ -69,7 +82,7 @@ Seed the initial System Administrator assistant and provision the Chart of Accou
 ```bash
 npm run seed
 ```
-*Note: Make sure to save the output plaintext API key for subsequent requests.*
+*Note: Make sure to save the output plaintext API key for subsequent requests. You can add it as `API_KEY=your_key` in `.env` to authenticate client tools, or manage and provision assistants at any time via the `./manage_assistant.py` CLI.*
 
 ### 4. Running the Application
 
@@ -101,4 +114,22 @@ npm run backup
 ### 7. Interactive API Docs
 
 Once the server is running, navigate to `http://localhost:11122/v1/api-docs/` in your browser to view the interactive Swagger UI API specification. Passing the `x-api-key` header of an assistant to `/v1/api-docs/openapi.json` will filter the spec, returning only the scoped endpoints that assistant has access to.
+
+### 8. Managing Assistants (Interactive CLI)
+
+A Python script is provided to interactively manage registered assistants, their roles, and their RBAC permissions.
+
+Run the utility:
+```bash
+./manage_assistant.py
+```
+
+Using this utility, you can:
+1. **List Registered Assistants**: View all registered assistants, their roles, prefixes, rate limits, status, and permissions.
+2. **Add New Assistant & Generate Key**: Registers a new assistant, prompts for rate limits, administrator status, and configures their granular RBAC permissions. Generates a secure API key (`erp_` + 64 hex characters) and prints it once.
+3. **Edit Assistant Details**: Modify an existing assistant's name, rate limit, and administrator role.
+4. **Set RBAC Permissions**: Add, remove, or modify fine-grained API permission scopes for any standard assistant using a visual categorized checklist.
+5. **Remove Assistant**: Permanently delete an assistant and clean up their associated API keys and permissions from the database.
+
+
 

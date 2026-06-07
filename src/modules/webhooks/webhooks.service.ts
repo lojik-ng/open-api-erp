@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { v4 as uuid } from 'uuid';
 import { db, withTransaction } from '../../config/database';
-import { ConflictError, NotFoundError } from '../../shared/errors';
+import { ConflictError, NotFoundError, ValidationError } from '../../shared/errors';
 import { logger } from '../../config/logger';
 
 export interface RegisterWebhookInput {
@@ -9,8 +9,47 @@ export interface RegisterWebhookInput {
   eventType: string;
 }
 
+function isSafeUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return false;
+    }
+    const hostname = parsed.hostname.toLowerCase();
+    
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '0.0.0.0') {
+      return false;
+    }
+    if (hostname === '169.254.169.254') {
+      return false;
+    }
+    if (hostname.startsWith('10.')) {
+      return false;
+    }
+    if (hostname.startsWith('192.168.')) {
+      return false;
+    }
+    if (hostname.startsWith('172.')) {
+      const parts = hostname.split('.');
+      if (parts.length >= 2) {
+        const second = parseInt(parts[1], 10);
+        if (second >= 16 && second <= 31) {
+          return false;
+        }
+      }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export class WebhooksService {
   static register(input: RegisterWebhookInput, assistantId: string) {
+    if (!isSafeUrl(input.url)) {
+      throw new ValidationError({ url: 'Webhook URL must not point to local or private networks.' });
+    }
+
     return withTransaction(() => {
       const id = uuid();
       const secret = `whsec_${crypto.randomBytes(24).toString('hex')}`;
