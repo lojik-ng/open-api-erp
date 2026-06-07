@@ -444,8 +444,44 @@ def remove_assistant_action(cursor, conn):
         conn.rollback()
         print_error(f"Failed to delete assistant: {e}")
 
+def adjust_database_permissions(db_path):
+    """Adjusts the ownership of the database files to the host user and the 'docker' group."""
+    try:
+        # If run under sudo, get the real host user's UID and GID
+        uid = int(os.environ.get('SUDO_UID', os.getuid()))
+        gid = int(os.environ.get('SUDO_GID', os.getgid()))
+    except (TypeError, ValueError):
+        uid = os.getuid()
+        gid = os.getgid()
+
+    # Attempt to resolve GID for the 'docker' group
+    try:
+        import grp
+        gid_docker = grp.getgrnam('docker').gr_gid
+    except (KeyError, ImportError):
+        gid_docker = gid
+
+    # List of files and directories to adjust
+    paths = [
+        os.path.dirname(db_path),
+        db_path,
+        f"{db_path}-wal",
+        f"{db_path}-shm"
+    ]
+
+    for p in paths:
+        if os.path.exists(p):
+            try:
+                os.chown(p, uid, gid_docker)
+            except PermissionError:
+                # Silently ignore if we don't have permissions (e.g. running as normal user on root files)
+                pass
+            except Exception:
+                pass
+
 def main():
     db_path = load_db_path()
+    adjust_database_permissions(db_path)
     
     if not os.path.exists(db_path):
         print_error(f"Database file not found at: '{db_path}'")
