@@ -480,6 +480,11 @@ def adjust_database_permissions(db_path):
                 pass
 
 def main():
+    if os.getuid() != 0:
+        print_error("This utility requires administrator privileges to run.")
+        print(f"Please execute it using: {COLOR_BOLD}sudo ./manage_assistant.py{COLOR_RESET}\n")
+        sys.exit(1)
+
     db_path = load_db_path()
     adjust_database_permissions(db_path)
     
