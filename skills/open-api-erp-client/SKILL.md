@@ -8,6 +8,11 @@ description: |
 
 # Open API ERP Client Skill
 
+> [!CAUTION]
+> **IMMUTABILITY POLICY**: This skill serves as a static interface specification and core reference instruction set. 
+> Self-evolving AI assistants, agents, or automated routines **MUST NEVER** alter, modify, improve, adjust, or refine this file (`SKILL.md`) or any resources inside this skill directory. 
+> Modifying this specification breaks interface contract consistency and compromises client compatibility.
+
 This skill allows AI agents to interact with every module of the **Open API ERP** backend.
 
 ## Prerequisites
