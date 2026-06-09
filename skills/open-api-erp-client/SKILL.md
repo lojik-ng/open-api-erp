@@ -686,6 +686,46 @@ At least one of `lead_id` or `client_id` must be provided. The referenced lead/c
 
 ---
 
+### 3.11. Cold Marketing List Module
+
+Permissions required: `read:cold_marketing`, `write:cold_marketing`
+
+#### Create a Cold Marketing Target
+
+```bash
+./scripts/client.sh POST cold-marketing '{"company_name": "Stark Industries", "contact_name": "Tony Stark", "email": "tony@stark.com", "phone": "+1-555-0199", "status": "pending", "notes": "High value prospect"}'
+```
+
+#### List Cold Marketing Targets
+
+```bash
+./scripts/client.sh GET cold-marketing
+# Filter by status:
+./scripts/client.sh GET "cold-marketing?status=pending"
+# Search by contact name, company name, or email:
+./scripts/client.sh GET "cold-marketing?q=Stark"
+```
+
+#### Get Target Details
+
+```bash
+./scripts/client.sh GET cold-marketing/{id}
+```
+
+#### Update Target Details
+
+```bash
+./scripts/client.sh PUT cold-marketing/{id} '{"status": "contacted", "notes": "Emailed first contact"}'
+```
+
+#### Delete Target
+
+```bash
+./scripts/client.sh DELETE cold-marketing/{id}
+```
+
+---
+
 ## 4. Verification & Testing
 
 Verify your environment connection and configuration by querying the `/health` endpoint anonymously:
