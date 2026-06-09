@@ -1,15 +1,46 @@
+import path from 'path';
+import fs from 'fs';
 import { db, withTransaction } from './config/database';
 import { InvoicingService } from './modules/invoicing/invoicing.service';
 import { logger } from './config/logger';
 
 let workerInterval: NodeJS.Timeout | null = null;
+let lastBackupDate: string | null = null;
+
+async function runDatabaseBackup(todayDateStr: string) {
+  const BACKUP_DIR = './data/backups';
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const backupPath = path.join(BACKUP_DIR, `erp-${timestamp}.db`);
+
+  logger.info(`Starting scheduled daily database backup to ${backupPath}...`);
+  try {
+    if (!fs.existsSync(BACKUP_DIR)) {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    }
+    await db.backup(backupPath);
+    logger.info(`✅ Scheduled daily database backup successfully created: ${backupPath}`);
+  } catch (err) {
+    logger.error(err, '❌ Scheduled daily database backup failed');
+    // Reset backup date on failure so the worker can retry on the next cycle
+    lastBackupDate = null;
+  }
+}
 
 /**
  * Main worker loop executed every 5 seconds.
  */
 export async function runWorkerIteration() {
   try {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    // Check if daily backup is due (runs during the 1 AM hour, once per day)
+    if (now.getHours() === 1 && lastBackupDate !== todayStr) {
+      lastBackupDate = todayStr;
+      runDatabaseBackup(todayStr).catch(err => {
+        logger.error(err, 'Error running daily database backup task');
+      });
+    }
 
     // Find subscriptions that are active and whose next billing date is due
     const dueSubscriptions = db.prepare(`

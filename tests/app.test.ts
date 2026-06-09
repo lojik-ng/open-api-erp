@@ -347,4 +347,53 @@ describe('Open API ERP API tests', () => {
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
     });
   });
+
+  describe('Background worker daily database backups', () => {
+    it('triggers database backup during 1 AM hour and skips otherwise', async () => {
+      const { runWorkerIteration } = require('../src/worker');
+      const { db: database } = require('../src/config/database');
+
+      // Spy on db.backup
+      const backupSpy = jest.spyOn(database, 'backup').mockImplementation(() => Promise.resolve());
+
+      // 1. Mock date to 12:00 PM (hour = 12)
+      const mockDateNoon = new Date(2026, 5, 9, 12, 0, 0);
+      const OriginalDate = global.Date;
+      let activeMockedDate = mockDateNoon;
+      
+      // Mock global Date
+      global.Date = class extends OriginalDate {
+        constructor(...args: any[]) {
+          if (args.length === 0) {
+            super();
+            return activeMockedDate;
+          }
+          // @ts-ignore
+          super(...args);
+        }
+      } as any;
+
+      await runWorkerIteration();
+      expect(backupSpy).not.toHaveBeenCalled();
+
+      // 2. Mock date to 1:00 AM (hour = 1)
+      const mockDate1AM = new OriginalDate(2026, 5, 9, 1, 0, 0);
+      activeMockedDate = mockDate1AM;
+
+      await runWorkerIteration();
+      expect(backupSpy).toHaveBeenCalledTimes(1);
+
+      // 3. Running iteration again on same day at 1:05 AM (hour = 1) should not trigger it again
+      backupSpy.mockClear();
+      const mockDate105AM = new OriginalDate(2026, 5, 9, 1, 5, 0);
+      activeMockedDate = mockDate105AM;
+
+      await runWorkerIteration();
+      expect(backupSpy).not.toHaveBeenCalled();
+
+      // Restore
+      global.Date = OriginalDate;
+      backupSpy.mockRestore();
+    });
+  });
 });
