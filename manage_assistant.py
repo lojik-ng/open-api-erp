@@ -69,6 +69,10 @@ PERMISSION_CATEGORIES = {
         ("read:monitored_communications", "View monitored communication logs"),
         ("write:monitored_communications", "Create/update/delete monitored communication logs"),
     ],
+    "Cold Marketing List": [
+        ("read:cold_marketing", "View cold marketing target lists"),
+        ("write:cold_marketing", "Create/update/delete cold marketing targets"),
+    ],
     "System / Special": [
         ("read:webhooks", "View registered outgoing webhooks"),
         ("write:webhooks", "Register/delete outgoing webhooks"),

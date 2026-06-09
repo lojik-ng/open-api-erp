@@ -23,6 +23,7 @@ import { hrRouter } from './modules/hr/hr.routes';
 import { webhooksRouter } from './modules/webhooks/webhooks.routes';
 import { monitoredCommunicationsRouter } from './modules/monitoredCommunications/monitoredCommunications.routes';
 import { documentsRouter } from './modules/documents/documents.routes';
+import { coldMarketingRouter } from './modules/coldMarketing/coldMarketing.routes';
 
 export const app = express();
 
@@ -106,6 +107,7 @@ app.use('/v1/hr', hrRouter);
 app.use('/v1/webhooks', webhooksRouter);
 app.use('/v1/monitored-communications', monitoredCommunicationsRouter);
 app.use('/v1/documents', documentsRouter);
+app.use('/v1/cold-marketing', coldMarketingRouter);
 
 // Global error handler (must be registered last)
 app.use(errorHandler);

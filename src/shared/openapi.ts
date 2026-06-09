@@ -90,6 +90,9 @@ export function getScopedSpec(permissions: string[], isAdmin: boolean): any {
     if (path.startsWith('/documents')) {
       return permissions.includes('read:documents') || permissions.includes('write:documents');
     }
+    if (path.startsWith('/cold-marketing')) {
+      return permissions.includes('read:cold_marketing') || permissions.includes('write:cold_marketing');
+    }
     return false;
   };
 
