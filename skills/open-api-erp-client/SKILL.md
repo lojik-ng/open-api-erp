@@ -457,13 +457,27 @@ Permissions required: `read:inventory`, `write:inventory`, `read:suppliers`, `wr
 #### Make Manual Stock Level Adjustment
 
 ```bash
-./scripts/client.sh POST inventory/stock/adjustments '{"product_id": "{product_uuid}", "quantity": -5, "reason": "damaged"}'
+./scripts/client.sh POST inventory/adjustments '{"product_id": "{product_uuid}", "quantity_change": -5.0, "reason_code": "damage", "notes": "damaged item"}'
+```
+
+#### List Stock Adjustments
+
+```bash
+./scripts/client.sh GET inventory/adjustments
+# Filter by product_id:
+./scripts/client.sh GET "inventory/adjustments?product_id={product_uuid}"
 ```
 
 #### Get Current Stock Levels
 
 ```bash
 ./scripts/client.sh GET inventory/stock
+```
+
+#### Get Specific Product Stock Details
+
+```bash
+./scripts/client.sh GET inventory/stock/{productId}
 ```
 
 ---
@@ -632,6 +646,42 @@ Permissions required: `read:monitored_communications`, `write:monitored_communic
 
 ```bash
 ./scripts/client.sh DELETE monitored-communications/{id}
+```
+
+---
+
+### 3.10. Documents Module
+
+Permissions required: `read:documents`, `write:documents`
+
+#### Create/Attach a Document to a Lead or Client
+
+At least one of `lead_id` or `client_id` must be provided. The referenced lead/client must exist.
+
+```bash
+./scripts/client.sh POST documents '{"title": "Contract Agreement", "details": "Draft agreement for lead", "filepath": "/uploads/leads/contract.pdf", "lead_id": "{lead_uuid}"}'
+```
+
+#### List Documents
+
+```bash
+./scripts/client.sh GET documents
+# Filter by lead_id:
+./scripts/client.sh GET "documents?lead_id={lead_uuid}"
+# Filter by client_id:
+./scripts/client.sh GET "documents?client_id={client_uuid}"
+```
+
+#### Get Document Details
+
+```bash
+./scripts/client.sh GET documents/{id}
+```
+
+#### Delete Document
+
+```bash
+./scripts/client.sh DELETE documents/{id}
 ```
 
 ---
