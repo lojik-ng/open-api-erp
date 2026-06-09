@@ -4,10 +4,10 @@ DROP TABLE IF EXISTS cold_marketing_list;
 
 CREATE TABLE IF NOT EXISTS cold_marketing_list (
     id TEXT PRIMARY KEY,               -- UUID
-    company_name TEXT,                 -- Optional
+    company_name TEXT NOT NULL UNIQUE, -- Required and Unique
     contact_name TEXT NOT NULL,        -- Required
     email TEXT NOT NULL,               -- Required
-    phone TEXT,                        -- Optional
+    phone TEXT NOT NULL UNIQUE,        -- Required and Unique
     status TEXT NOT NULL DEFAULT 'New' CHECK (status IN ('New', 'Used')),
     notes TEXT,                        -- Optional
     created_at TEXT NOT NULL DEFAULT (datetime('now')),

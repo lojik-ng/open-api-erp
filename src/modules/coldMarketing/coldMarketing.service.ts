@@ -1,30 +1,43 @@
 import { v4 as uuid } from 'uuid';
 import { db } from '../../config/database';
-import { NotFoundError } from '../../shared/errors';
+import { ConflictError, NotFoundError } from '../../shared/errors';
 import { encodeCursor, cursorWhereClause } from '../../shared/pagination';
 
 export class ColdMarketingService {
   static create(input: {
-    company_name?: string | null;
+    company_name: string;
     contact_name: string;
     email: string;
-    phone?: string | null;
+    phone: string;
     status?: 'New' | 'Used';
     notes?: string | null;
   }) {
     const id = uuid();
-    db.prepare(`
-      INSERT INTO cold_marketing_list (id, company_name, contact_name, email, phone, status, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      id,
-      input.company_name ?? null,
-      input.contact_name,
-      input.email,
-      input.phone ?? null,
-      input.status ?? 'New',
-      input.notes ?? null
-    );
+    try {
+      db.prepare(`
+        INSERT INTO cold_marketing_list (id, company_name, contact_name, email, phone, status, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        id,
+        input.company_name,
+        input.contact_name,
+        input.email,
+        input.phone,
+        input.status ?? 'New',
+        input.notes ?? null
+      );
+    } catch (err: any) {
+      if (err.message && err.message.includes('UNIQUE constraint failed')) {
+        if (err.message.includes('company_name')) {
+          throw new ConflictError(`Cold marketing entry with company name '${input.company_name}' already exists.`);
+        }
+        if (err.message.includes('phone')) {
+          throw new ConflictError(`Cold marketing entry with phone '${input.phone}' already exists.`);
+        }
+        throw new ConflictError('Cold marketing entry with duplicate company_name or phone already exists.');
+      }
+      throw err;
+    }
     return this.getById(id);
   }
 
@@ -83,10 +96,10 @@ export class ColdMarketingService {
   }
 
   static update(id: string, input: {
-    company_name?: string | null;
+    company_name?: string;
     contact_name?: string;
     email?: string;
-    phone?: string | null;
+    phone?: string;
     status?: 'New' | 'Used';
     notes?: string | null;
   }) {
@@ -106,11 +119,24 @@ export class ColdMarketingService {
     if (sets.length > 0) {
       sets.push("updated_at = datetime('now')");
       values.push(id);
-      db.prepare(`
-        UPDATE cold_marketing_list
-        SET ${sets.join(', ')}
-        WHERE id = ?
-      `).run(...values);
+      try {
+        db.prepare(`
+          UPDATE cold_marketing_list
+          SET ${sets.join(', ')}
+          WHERE id = ?
+        `).run(...values);
+      } catch (err: any) {
+        if (err.message && err.message.includes('UNIQUE constraint failed')) {
+          if (err.message.includes('company_name')) {
+            throw new ConflictError(`Cold marketing entry with company name '${input.company_name}' already exists.`);
+          }
+          if (err.message.includes('phone')) {
+            throw new ConflictError(`Cold marketing entry with phone '${input.phone}' already exists.`);
+          }
+          throw new ConflictError('Cold marketing entry with duplicate company_name or phone already exists.');
+        }
+        throw err;
+      }
     }
 
     return this.getById(id);

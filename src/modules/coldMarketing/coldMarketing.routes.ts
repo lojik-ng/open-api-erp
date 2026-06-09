@@ -9,10 +9,10 @@ export const coldMarketingRouter = Router();
 
 // Zod validation schemas
 const ColdMarketingEntrySchema = z.object({
-  company_name: z.string().optional().nullable(),
+  company_name: z.string().min(1, 'company_name is required'),
   contact_name: z.string().min(1, 'contact_name is required'),
   email: z.string().email('Must be a valid email address'),
-  phone: z.string().optional().nullable(),
+  phone: z.string().min(1, 'phone is required'),
   status: z.enum(['New', 'Used']).optional(),
   notes: z.string().optional().nullable(),
 });
@@ -20,10 +20,10 @@ const ColdMarketingEntrySchema = z.object({
 // Register Model in OpenAPI Spec
 const OpenAPIColdMarketingEntry = registry.register('ColdMarketingEntry', z.object({
   id: z.string().uuid(),
-  company_name: z.string().nullable(),
+  company_name: z.string(),
   contact_name: z.string(),
   email: z.string(),
-  phone: z.string().nullable(),
+  phone: z.string(),
   status: z.string(),
   notes: z.string().nullable(),
   created_at: z.string(),

@@ -71,6 +71,52 @@ describe('Cold Marketing List Integration Tests', () => {
       .send({ email: 'not-an-email' });
     expect(resPostInvalid.status).toBe(422);
 
+    // 3a. POST: Create contact with missing company_name (422)
+    const resPostMissingCompany = await request(app)
+      .post('/v1/cold-marketing')
+      .set('x-api-key', writeOnlyKey)
+      .send({
+        contact_name: 'Tony Stark',
+        email: 'tony2@stark.com',
+        phone: '+1-555-0299',
+      });
+    expect(resPostMissingCompany.status).toBe(422);
+
+    // 3b. POST: Create contact with missing phone (422)
+    const resPostMissingPhone = await request(app)
+      .post('/v1/cold-marketing')
+      .set('x-api-key', writeOnlyKey)
+      .send({
+        company_name: 'Stark Industries 2',
+        contact_name: 'Tony Stark',
+        email: 'tony2@stark.com',
+      });
+    expect(resPostMissingPhone.status).toBe(422);
+
+    // 3c. POST: Create contact with duplicate company_name (409)
+    const resPostDupCompany = await request(app)
+      .post('/v1/cold-marketing')
+      .set('x-api-key', writeOnlyKey)
+      .send({
+        company_name: 'Stark Industries', // Duplicate
+        contact_name: 'Pepper Potts',
+        email: 'pepper@stark.com',
+        phone: '+1-555-0200',
+      });
+    expect(resPostDupCompany.status).toBe(409);
+
+    // 3d. POST: Create contact with duplicate phone (409)
+    const resPostDupPhone = await request(app)
+      .post('/v1/cold-marketing')
+      .set('x-api-key', writeOnlyKey)
+      .send({
+        company_name: 'Stark Industries 3',
+        contact_name: 'Pepper Potts',
+        email: 'pepper@stark.com',
+        phone: '+1-555-0199', // Duplicate
+      });
+    expect(resPostDupPhone.status).toBe(409);
+
     // 4. GET: List contacts without permission (403)
     const resList403 = await request(app)
       .get('/v1/cold-marketing')
@@ -126,6 +172,39 @@ describe('Cold Marketing List Integration Tests', () => {
     expect(resUpdateOk.status).toBe(200);
     expect(resUpdateOk.body.status).toBe('Used');
     expect(resUpdateOk.body.notes).toBe('Spoke on the phone');
+
+    // 9a. Create another contact to test update conflicts
+    const resPostSecond = await request(app)
+      .post('/v1/cold-marketing')
+      .set('x-api-key', writeOnlyKey)
+      .send({
+        company_name: 'Oscorp',
+        contact_name: 'Norman Osborn',
+        email: 'norman@oscorp.com',
+        phone: '+1-555-0800',
+      });
+    expect(resPostSecond.status).toBe(201);
+    const secondId = resPostSecond.body.id;
+
+    // 9b. PUT: Update Stark contact to Oscorp company_name (409)
+    const resUpdateDupCompany = await request(app)
+      .put(`/v1/cold-marketing/${targetId}`)
+      .set('x-api-key', writeOnlyKey)
+      .send({ company_name: 'Oscorp' });
+    expect(resUpdateDupCompany.status).toBe(409);
+
+    // 9c. PUT: Update Stark contact to Oscorp phone (409)
+    const resUpdateDupPhone = await request(app)
+      .put(`/v1/cold-marketing/${targetId}`)
+      .set('x-api-key', writeOnlyKey)
+      .send({ phone: '+1-555-0800' });
+    expect(resUpdateDupPhone.status).toBe(409);
+
+    // 9d. Clean up second contact
+    const resDeleteSecond = await request(app)
+      .delete(`/v1/cold-marketing/${secondId}`)
+      .set('x-api-key', writeOnlyKey);
+    expect(resDeleteSecond.status).toBe(200);
 
     // 10. Verify audit logging
     const auditLog = db.prepare('SELECT * FROM audit_logs WHERE resource_id = ? AND action = ?').get(targetId, 'UPDATE') as any;
