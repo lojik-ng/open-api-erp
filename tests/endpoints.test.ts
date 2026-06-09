@@ -593,6 +593,50 @@ describe('Open API ERP Complete Endpoint Coverage Tests', () => {
         .set('x-api-key', admin.apiKey);
       expect(resGetAdj.status).toBe(200);
 
+      // Test non-admin permissions for stock adjustments
+      const seedNonAdmin = (name: string, permissions: string[]) => {
+        const id = uuid();
+        const apiKey = `erp_test_${crypto.randomBytes(16).toString('hex')}`;
+        const apiKeyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+        const apiKeyPrefix = apiKey.substring(0, 8);
+
+        db.prepare(`
+          INSERT INTO assistants (id, name, api_key_hash, api_key_prefix, is_admin)
+          VALUES (?, ?, ?, ?, 0)
+        `).run(id, name, apiKeyHash, apiKeyPrefix);
+
+        const insertPerm = db.prepare(`
+          INSERT INTO assistant_permissions (id, assistant_id, permission)
+          VALUES (?, ?, ?)
+        `);
+        for (const perm of permissions) {
+          insertPerm.run(uuid(), id, perm);
+        }
+
+        return { id, apiKey };
+      };
+
+      const inventoryUser = seedNonAdmin('Inventory Bot', ['read:inventory', 'write:inventory']);
+
+      // 1. Post stock adjustment as non-admin with write:inventory (should succeed)
+      const resAdjNonAdmin = await request(app)
+        .post('/v1/inventory/adjustments')
+        .set('x-api-key', inventoryUser.apiKey)
+        .send({ product_id: testProductId, quantity_change: 50.0, reason_code: 'manual_correction' });
+      expect(resAdjNonAdmin.status).toBe(201);
+
+      // 2. Get stock adjustments as non-admin with read:inventory (should succeed)
+      const resGetAdjNonAdmin = await request(app)
+        .get('/v1/inventory/adjustments')
+        .set('x-api-key', inventoryUser.apiKey);
+      expect(resGetAdjNonAdmin.status).toBe(200);
+
+      // 3. Get specific product stock details as non-admin with read:inventory (should succeed)
+      const resGetStockNonAdmin = await request(app)
+        .get(`/v1/inventory/stock/${testProductId}`)
+        .set('x-api-key', inventoryUser.apiKey);
+      expect(resGetStockNonAdmin.status).toBe(200);
+
       // POST /v1/inventory/suppliers
       const resSupplier = await request(app)
         .post('/v1/inventory/suppliers')

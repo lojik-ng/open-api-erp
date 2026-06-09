@@ -89,6 +89,16 @@ const OpenAPIPurchaseOrder = registry.register('PurchaseOrder', z.object({
   line_items: z.array(OpenAPIPOLine).optional(),
 }));
 
+const OpenAPIStockAdjustment = registry.register('StockAdjustment', z.object({
+  id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  quantity_change: z.number(),
+  reason_code: z.string(),
+  notes: z.string().nullable(),
+  assistant_id: z.string().uuid(),
+  created_at: z.string(),
+}));
+
 // OpenAPI registrations
 registry.registerPath({
   method: 'get',
@@ -108,6 +118,62 @@ registry.registerPath({
             data: z.array(OpenAPIStock),
             meta: z.object({ next_cursor: z.string().nullable(), has_more: z.boolean() }),
           }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/inventory/stock/{productId}',
+  summary: 'Get stock details for a product',
+  tags: ['Inventory'],
+  parameters: [
+    { name: 'productId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+  ],
+  responses: {
+    200: {
+      description: 'Stock level details for the product',
+      content: {
+        'application/json': { schema: OpenAPIStock },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/inventory/adjustments',
+  summary: 'Create a stock adjustment',
+  tags: ['Inventory'],
+  request: {
+    body: { content: { 'application/json': { schema: StockAdjustmentSchema } } },
+  },
+  responses: {
+    201: {
+      description: 'Stock adjustment logged successfully',
+      content: {
+        'application/json': { schema: OpenAPIStockAdjustment },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/inventory/adjustments',
+  summary: 'List stock adjustments',
+  tags: ['Inventory'],
+  parameters: [
+    { name: 'product_id', in: 'query', schema: { type: 'string', format: 'uuid' } },
+  ],
+  responses: {
+    200: {
+      description: 'List of stock adjustments',
+      content: {
+        'application/json': {
+          schema: z.array(OpenAPIStockAdjustment),
         },
       },
     },
@@ -137,7 +203,7 @@ inventoryRouter.get('/stock/:productId', rbac('read:inventory'), (req: Request, 
   }
 });
 
-inventoryRouter.post('/adjustments', rbac('write:stock_adjustments'), audit('stock_adjustments'), (req: Request, res: Response, next: NextFunction) => {
+inventoryRouter.post('/adjustments', rbac('write:inventory'), audit('stock_adjustments'), (req: Request, res: Response, next: NextFunction) => {
   try {
     const validated = StockAdjustmentSchema.parse(req.body);
     const result = InventoryService.createAdjustment(validated, req.assistant!.id);
