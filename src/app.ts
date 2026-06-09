@@ -22,6 +22,7 @@ import { inventoryRouter } from './modules/inventory/inventory.routes';
 import { hrRouter } from './modules/hr/hr.routes';
 import { webhooksRouter } from './modules/webhooks/webhooks.routes';
 import { monitoredCommunicationsRouter } from './modules/monitoredCommunications/monitoredCommunications.routes';
+import { documentsRouter } from './modules/documents/documents.routes';
 
 export const app = express();
 
@@ -104,6 +105,7 @@ app.use('/v1/inventory', inventoryRouter);
 app.use('/v1/hr', hrRouter);
 app.use('/v1/webhooks', webhooksRouter);
 app.use('/v1/monitored-communications', monitoredCommunicationsRouter);
+app.use('/v1/documents', documentsRouter);
 
 // Global error handler (must be registered last)
 app.use(errorHandler);

@@ -22,6 +22,8 @@ PERMISSION_CATEGORIES = {
         ("convert:lead", "Convert leads to clients"),
         ("read:clients", "View client records"),
         ("write:clients", "Create/update client records"),
+        ("read:documents", "View CRM document attachments"),
+        ("write:documents", "Create/delete CRM document attachments"),
     ],
     "Catalog Module": [
         ("read:products", "View product catalog"),

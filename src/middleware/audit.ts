@@ -9,7 +9,7 @@ const ALLOWED_TABLES = new Set([
   'payments', 'accounts', 'journal_entries', 'closed_periods', 'inventory', 'stock_adjustments',
   'suppliers', 'purchase_orders', 'purchase_order_lines', 'employees', 'attendance_records',
   'leave_types', 'leave_requests', 'payslips', 'performance_reviews', 'assistant_scopes', 'webhook_subscriptions',
-  'monitored_communications'
+  'monitored_communications', 'documents'
 ]);
 
 function getResourceById(resourceType: string, id: string): any | null {

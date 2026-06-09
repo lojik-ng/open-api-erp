@@ -87,6 +87,9 @@ export function getScopedSpec(permissions: string[], isAdmin: boolean): any {
     if (path.startsWith('/monitored-communications')) {
       return permissions.includes('read:monitored_communications') || permissions.includes('write:monitored_communications');
     }
+    if (path.startsWith('/documents')) {
+      return permissions.includes('read:documents') || permissions.includes('write:documents');
+    }
     return false;
   };
 
