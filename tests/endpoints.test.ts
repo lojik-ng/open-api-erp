@@ -208,12 +208,19 @@ describe('Open API ERP Complete Endpoint Coverage Tests', () => {
         .set('x-api-key', admin.apiKey)
         .send({ client_id: testClientId, type: 'call', subject: 'Initial intro', body: 'Spoke with CFO' });
       expect(resPostInter.status).toBe(201);
+      const testInteractionId = resPostInter.body.id;
 
       // GET /v1/crm/interactions
       const resGetInter = await request(app)
         .get('/v1/crm/interactions')
         .set('x-api-key', admin.apiKey);
       expect(resGetInter.status).toBe(200);
+
+      // DELETE /v1/crm/interactions/:id
+      const resDelInter = await request(app)
+        .delete(`/v1/crm/interactions/${testInteractionId}`)
+        .set('x-api-key', admin.apiKey);
+      expect(resDelInter.status).toBe(200);
 
       // POST /v1/crm/scheduled-events
       const resPostEvent = await request(app)
@@ -247,6 +254,36 @@ describe('Open API ERP Complete Endpoint Coverage Tests', () => {
         .delete(`/v1/crm/clients/${testClientId}`)
         .set('x-api-key', admin.apiKey);
       expect(resDelClient.status).toBe(200);
+    });
+
+    it('should delete a lead that has associated interactions without CHECK constraint failure', async () => {
+      const admin = seedTestAdmin();
+
+      // Create a lead
+      const resLead = await request(app)
+        .post('/v1/crm/leads')
+        .set('x-api-key', admin.apiKey)
+        .send({ first_name: 'LeadA', last_name: 'LeadB', stage: 'new' });
+      expect(resLead.status).toBe(201);
+      const leadId = resLead.body.id;
+
+      // Create an interaction linked ONLY to this lead
+      const resInter = await request(app)
+        .post('/v1/crm/interactions')
+        .set('x-api-key', admin.apiKey)
+        .send({ lead_id: leadId, type: 'note', subject: 'Note on lead', body: 'Lead interaction only' });
+      expect(resInter.status).toBe(201);
+      const interId = resInter.body.id;
+
+      // Delete the lead (which should successfully cascade delete the interaction due to our pre-cleanup logic)
+      const resDelLead = await request(app)
+        .delete(`/v1/crm/leads/${leadId}`)
+        .set('x-api-key', admin.apiKey);
+      expect(resDelLead.status).toBe(200);
+
+      // Verify the interaction is deleted as well
+      const interactionInDb = db.prepare('SELECT * FROM interactions WHERE id = ?').get(interId);
+      expect(interactionInDb).toBeUndefined();
     });
   });
 

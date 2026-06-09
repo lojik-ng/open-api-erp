@@ -107,11 +107,16 @@ export class CrmService {
   }
 
   static deleteLead(id: string) {
-    const result = db.prepare('DELETE FROM leads WHERE id = ?').run(id);
-    if (result.changes === 0) {
-      throw new NotFoundError('Lead', id);
-    }
-    return { success: true };
+    return withTransaction(() => {
+      // First delete interactions linked only to this lead to prevent CHECK constraint violation
+      db.prepare('DELETE FROM interactions WHERE lead_id = ? AND client_id IS NULL').run(id);
+
+      const result = db.prepare('DELETE FROM leads WHERE id = ?').run(id);
+      if (result.changes === 0) {
+        throw new NotFoundError('Lead', id);
+      }
+      return { success: true };
+    });
   }
 
   static convertLead(id: string, assistantId: string) {
@@ -400,6 +405,14 @@ export class CrmService {
         has_more: hasMore,
       },
     };
+  }
+
+  static deleteInteraction(id: string) {
+    const result = db.prepare('DELETE FROM interactions WHERE id = ?').run(id);
+    if (result.changes === 0) {
+      throw new NotFoundError('Interaction', id);
+    }
+    return { success: true };
   }
 
   // ==========================================

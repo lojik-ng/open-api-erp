@@ -94,7 +94,69 @@ const OpenAPIClient = registry.register('Client', z.object({
   updated_at: z.string(),
 }));
 
+const OpenAPIInteraction = registry.register('Interaction', z.object({
+  id: z.string().uuid(),
+  lead_id: z.string().uuid().nullable(),
+  client_id: z.string().uuid().nullable(),
+  type: z.string(),
+  subject: z.string().nullable(),
+  body: z.string().nullable(),
+  interaction_date: z.string(),
+  assistant_id: z.string().uuid(),
+  created_at: z.string(),
+}));
+
 // OpenAPI routes registration
+registry.registerPath({
+  method: 'post',
+  path: '/crm/interactions',
+  summary: 'Create a new interaction',
+  tags: ['CRM'],
+  request: {
+    body: { content: { 'application/json': { schema: InteractionSchema } } },
+  },
+  responses: {
+    201: { description: 'Interaction created', content: { 'application/json': { schema: OpenAPIInteraction } } },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/crm/interactions',
+  summary: 'List and filter interactions',
+  tags: ['CRM'],
+  parameters: [
+    { name: 'cursor', in: 'query', schema: { type: 'string' } },
+    { name: 'limit', in: 'query', schema: { type: 'integer' } },
+    { name: 'lead_id', in: 'query', schema: { type: 'string', format: 'uuid' } },
+    { name: 'client_id', in: 'query', schema: { type: 'string', format: 'uuid' } },
+  ],
+  responses: {
+    200: {
+      description: 'Paginated list of interactions',
+      content: {
+        'application/json': {
+          schema: z.object({
+            data: z.array(OpenAPIInteraction),
+            meta: z.object({ next_cursor: z.string().nullable(), has_more: z.boolean() }),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'delete',
+  path: '/crm/interactions/{id}',
+  summary: 'Delete an interaction',
+  tags: ['CRM'],
+  parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: {
+    200: { description: 'Interaction deleted', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
+  },
+});
+
 registry.registerPath({
   method: 'post',
   path: '/crm/leads',
@@ -336,6 +398,15 @@ crmRouter.get('/interactions', rbac('read:interactions'), (req: Request, res: Re
     const lead_id = req.query.lead_id as string | undefined;
     const client_id = req.query.client_id as string | undefined;
     const result = CrmService.listInteractions({ lead_id, client_id, limit, cursor });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+crmRouter.delete('/interactions/:id', rbac('write:interactions'), audit('interactions'), (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = CrmService.deleteInteraction(req.params.id);
     res.json(result);
   } catch (err) {
     next(err);

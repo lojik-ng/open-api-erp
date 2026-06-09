@@ -207,6 +207,13 @@ Permissions required: `read:leads`, `write:leads`, `read:clients`, `write:client
 ./scripts/client.sh GET "crm/interactions?client_id={client_id}"
 ```
 
+#### Delete an Interaction
+
+```bash
+./scripts/client.sh DELETE crm/interactions/{id}
+```
+
+
 #### Create a Scheduled Event / Task
 
 ```bash

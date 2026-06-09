@@ -51,6 +51,12 @@ export function getScopedSpec(permissions: string[], isAdmin: boolean): any {
     if (path.startsWith('/crm/clients')) {
       return permissions.includes('read:clients') || permissions.includes('write:clients');
     }
+    if (path.startsWith('/crm/interactions')) {
+      return permissions.includes('read:interactions') || permissions.includes('write:interactions');
+    }
+    if (path.startsWith('/crm/scheduled-events')) {
+      return permissions.includes('read:scheduled_events') || permissions.includes('write:scheduled_events');
+    }
     if (path.startsWith('/catalog/products')) {
       return permissions.includes('read:products') || permissions.includes('write:products');
     }
