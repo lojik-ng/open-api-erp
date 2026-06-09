@@ -1,12 +1,14 @@
 -- 011_cold_marketing_list.sql
 
+DROP TABLE IF EXISTS cold_marketing_list;
+
 CREATE TABLE IF NOT EXISTS cold_marketing_list (
     id TEXT PRIMARY KEY,               -- UUID
     company_name TEXT,                 -- Optional
     contact_name TEXT NOT NULL,        -- Required
     email TEXT NOT NULL,               -- Required
     phone TEXT,                        -- Optional
-    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'contacted', 'interested', 'not_interested', 'converted')),
+    status TEXT NOT NULL DEFAULT 'New' CHECK (status IN ('New', 'Used')),
     notes TEXT,                        -- Optional
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))

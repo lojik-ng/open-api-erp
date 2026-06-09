@@ -9,7 +9,7 @@ export class ColdMarketingService {
     contact_name: string;
     email: string;
     phone?: string | null;
-    status?: 'pending' | 'contacted' | 'interested' | 'not_interested' | 'converted';
+    status?: 'New' | 'Used';
     notes?: string | null;
   }) {
     const id = uuid();
@@ -22,7 +22,7 @@ export class ColdMarketingService {
       input.contact_name,
       input.email,
       input.phone ?? null,
-      input.status ?? 'pending',
+      input.status ?? 'New',
       input.notes ?? null
     );
     return this.getById(id);
@@ -87,7 +87,7 @@ export class ColdMarketingService {
     contact_name?: string;
     email?: string;
     phone?: string | null;
-    status?: 'pending' | 'contacted' | 'interested' | 'not_interested' | 'converted';
+    status?: 'New' | 'Used';
     notes?: string | null;
   }) {
     this.getById(id); // Throws 404 if not found

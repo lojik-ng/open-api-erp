@@ -701,7 +701,7 @@ Permissions required: `read:cold_marketing`, `write:cold_marketing`
 ```bash
 ./scripts/client.sh GET cold-marketing
 # Filter by status:
-./scripts/client.sh GET "cold-marketing?status=pending"
+./scripts/client.sh GET "cold-marketing?status=New"
 # Search by contact name, company name, or email:
 ./scripts/client.sh GET "cold-marketing?q=Stark"
 ```
@@ -715,7 +715,7 @@ Permissions required: `read:cold_marketing`, `write:cold_marketing`
 #### Update Target Details
 
 ```bash
-./scripts/client.sh PUT cold-marketing/{id} '{"status": "contacted", "notes": "Emailed first contact"}'
+./scripts/client.sh PUT cold-marketing/{id} '{"status": "Used", "notes": "Emailed first contact"}'
 ```
 
 #### Delete Target

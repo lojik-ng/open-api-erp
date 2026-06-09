@@ -13,7 +13,7 @@ const ColdMarketingEntrySchema = z.object({
   contact_name: z.string().min(1, 'contact_name is required'),
   email: z.string().email('Must be a valid email address'),
   phone: z.string().optional().nullable(),
-  status: z.enum(['pending', 'contacted', 'interested', 'not_interested', 'converted']).optional(),
+  status: z.enum(['New', 'Used']).optional(),
   notes: z.string().optional().nullable(),
 });
 

@@ -43,7 +43,6 @@ describe('Cold Marketing List Integration Tests', () => {
       contact_name: 'Tony Stark',
       email: 'tony@stark.com',
       phone: '+1-555-0199',
-      status: 'pending',
       notes: 'High value prospect',
     };
 
@@ -62,7 +61,7 @@ describe('Cold Marketing List Integration Tests', () => {
     expect(resPostOk.status).toBe(201);
     expect(resPostOk.body.id).toBeDefined();
     expect(resPostOk.body.contact_name).toBe('Tony Stark');
-    expect(resPostOk.body.status).toBe('pending');
+    expect(resPostOk.body.status).toBe('New');
     const targetId = resPostOk.body.id;
 
     // 3. POST: Create invalid contact (missing name/invalid email) (422)
@@ -101,13 +100,13 @@ describe('Cold Marketing List Integration Tests', () => {
 
     // 7. GET: List contacts filtering by status
     const resListFilterStatus = await request(app)
-      .get('/v1/cold-marketing?status=pending')
+      .get('/v1/cold-marketing?status=New')
       .set('x-api-key', readOnlyKey);
     expect(resListFilterStatus.status).toBe(200);
     expect(resListFilterStatus.body.data.length).toBe(1);
 
     const resListFilterStatusNoMatch = await request(app)
-      .get('/v1/cold-marketing?status=contacted')
+      .get('/v1/cold-marketing?status=Used')
       .set('x-api-key', readOnlyKey);
     expect(resListFilterStatusNoMatch.status).toBe(200);
     expect(resListFilterStatusNoMatch.body.data.length).toBe(0);
@@ -123,9 +122,9 @@ describe('Cold Marketing List Integration Tests', () => {
     const resUpdateOk = await request(app)
       .put(`/v1/cold-marketing/${targetId}`)
       .set('x-api-key', writeOnlyKey)
-      .send({ status: 'contacted', notes: 'Spoke on the phone' });
+      .send({ status: 'Used', notes: 'Spoke on the phone' });
     expect(resUpdateOk.status).toBe(200);
-    expect(resUpdateOk.body.status).toBe('contacted');
+    expect(resUpdateOk.body.status).toBe('Used');
     expect(resUpdateOk.body.notes).toBe('Spoke on the phone');
 
     // 10. Verify audit logging
