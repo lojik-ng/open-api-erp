@@ -486,19 +486,39 @@ Permissions required: `read:inventory`, `write:inventory`, `read:suppliers`, `wr
 
 Permissions required: `read:employees`, `write:employees`, `read:attendance`, `write:attendance`, `read:leaves`, `write:leaves`, `read:payroll`, `process:payroll`, `read:performance`, `write:performance`
 
+**Important behavioral notes:**
+- Employee creation always sets `status` to `onboarding`. Use `PUT` to change status (e.g., to `active`).
+- The `status` field is only accepted on update, not on create.
+- All list endpoints support cursor-based pagination via `?cursor={cursor}&limit={n}` query params and return `{ data: [...], meta: { next_cursor, has_more } }`.
+- Leave approval/rejection cannot be performed by the same employee who requested the leave (returns `409`).
+- Payroll cannot be run twice for the same period (returns `409`).
+- Payroll groups results by currency and includes a `currency_totals` breakdown in the response.
+
 #### Create an Employee (Defaults to onboarding status)
 
+Does not accept `status` — all new employees start as `onboarding`.
+
 ```bash
-./scripts/client.sh POST hr/employees '{"first_name": "Alice", "last_name": "Smith", "start_date": "2026-06-01", "employment_type": "full_time", "base_salary": 3000.0, "currency": "USD"}'
+./scripts/client.sh POST hr/employees '{"first_name": "Alice", "last_name": "Smith", "email": "alice@company.com", "start_date": "2026-06-01", "employment_type": "full_time", "base_salary": 3000.0, "currency": "USD"}'
 ```
 
-#### List Employees
+#### List Employees (Paginated)
 
 ```bash
 ./scripts/client.sh GET hr/employees
+# With pagination:
+./scripts/client.sh GET "hr/employees?limit=10&cursor={next_cursor}"
+# Include soft-deleted (requires read:deleted permission):
+./scripts/client.sh GET "hr/employees?include_deleted=true"
 ```
 
-#### Update Employee status / Details (Activate employee)
+#### Get Employee by ID
+
+```bash
+./scripts/client.sh GET hr/employees/{id}
+```
+
+#### Update Employee Status / Details (Activate employee)
 
 ```bash
 ./scripts/client.sh PUT hr/employees/{id} '{"status": "active"}'
@@ -512,20 +532,32 @@ Permissions required: `read:employees`, `write:employees`, `read:attendance`, `w
 
 #### Attendance Clock In
 
+Accepts an optional `date` field (YYYY-MM-DD) to specify the attendance date explicitly. If omitted, defaults to the server's current UTC date.
+
 ```bash
 ./scripts/client.sh POST hr/attendance/clock-in '{"employee_id": "{employee_uuid}"}'
+# With explicit date (recommended to avoid timezone issues):
+./scripts/client.sh POST hr/attendance/clock-in '{"employee_id": "{employee_uuid}", "date": "2026-06-15"}'
 ```
 
 #### Attendance Clock Out
 
+Also accepts an optional `date` field.
+
 ```bash
 ./scripts/client.sh POST hr/attendance/clock-out '{"employee_id": "{employee_uuid}"}'
+# With explicit date:
+./scripts/client.sh POST hr/attendance/clock-out '{"employee_id": "{employee_uuid}", "date": "2026-06-15"}'
 ```
 
-#### List Attendance Records
+#### List Attendance Records (Paginated)
 
 ```bash
 ./scripts/client.sh GET hr/attendance
+# Filter by employee:
+./scripts/client.sh GET "hr/attendance?employee_id={employee_uuid}"
+# With pagination:
+./scripts/client.sh GET "hr/attendance?limit=25&cursor={next_cursor}"
 ```
 
 #### Create a Leave Type
@@ -546,13 +578,19 @@ Permissions required: `read:employees`, `write:employees`, `read:attendance`, `w
 ./scripts/client.sh POST hr/leaves '{"employee_id": "{employee_uuid}", "leave_type_id": "{leave_type_uuid}", "start_date": "2026-12-01", "end_date": "2026-12-05", "reason": "Holiday"}'
 ```
 
-#### List Leave Requests
+#### List Leave Requests (Paginated)
 
 ```bash
 ./scripts/client.sh GET hr/leaves
+# Filter by employee:
+./scripts/client.sh GET "hr/leaves?employee_id={employee_uuid}"
+# With pagination:
+./scripts/client.sh GET "hr/leaves?limit=25&cursor={next_cursor}"
 ```
 
 #### Approve Leave Request
+
+The `manager_id` must be a different employee than the one who requested the leave. Self-approval returns `409 Conflict`.
 
 ```bash
 ./scripts/client.sh POST hr/leaves/{id}/approve '{"manager_id": "{manager_employee_uuid}"}'
@@ -560,20 +598,28 @@ Permissions required: `read:employees`, `write:employees`, `read:attendance`, `w
 
 #### Reject Leave Request
 
+Same self-action constraint as approval — the manager must be a different employee. Self-rejection returns `409 Conflict`.
+
 ```bash
 ./scripts/client.sh POST hr/leaves/{id}/reject '{"manager_id": "{manager_employee_uuid}"}'
 ```
 
 #### Run Payroll (Triggers automated Ledger Entries)
 
+Payroll is idempotent per period — running it twice for the same `period_start`/`period_end` returns `409 Conflict`. The response includes per-currency breakdowns in `currency_totals`.
+
 ```bash
 ./scripts/client.sh POST hr/payroll/run '{"period_start": "2026-06-01", "period_end": "2026-06-30"}'
 ```
 
-#### List Payslips
+#### List Payslips (Paginated)
 
 ```bash
 ./scripts/client.sh GET hr/payroll/payslips
+# Filter by employee:
+./scripts/client.sh GET "hr/payroll/payslips?employee_id={employee_uuid}"
+# With pagination:
+./scripts/client.sh GET "hr/payroll/payslips?limit=25&cursor={next_cursor}"
 ```
 
 #### Post a Performance Review
@@ -582,10 +628,14 @@ Permissions required: `read:employees`, `write:employees`, `read:attendance`, `w
 ./scripts/client.sh POST hr/performance-reviews '{"employee_id": "{employee_uuid}", "reviewer_id": "{manager_uuid}", "review_period": "2026-Q2", "rating": 4.5, "feedback_notes": "Consistent delivery."}'
 ```
 
-#### List Performance Reviews
+#### List Performance Reviews (Paginated)
 
 ```bash
 ./scripts/client.sh GET hr/performance-reviews
+# Filter by employee:
+./scripts/client.sh GET "hr/performance-reviews?employee_id={employee_uuid}"
+# With pagination:
+./scripts/client.sh GET "hr/performance-reviews?limit=25&cursor={next_cursor}"
 ```
 
 ---
